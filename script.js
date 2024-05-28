@@ -3,6 +3,14 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {maxZoom: 19,}
 
 var markers = L.markerClusterGroup();
 var allStations = [];
+var redIcon = L.icon({
+                iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png',
+                shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.3.1/images/marker-shadow.png',
+                iconSize: [25, 41],
+                iconAnchor: [12, 41],
+                popupAnchor: [1, -34],
+                shadowSize: [41, 41]
+});
 
 Promise.all([
     fetch('json/operator.json').then(response => response.json()),
@@ -64,7 +72,7 @@ Promise.all([
             popupContent += `Typ ładowania: ${solution.mode}<br>Moc: ${solution.power} kW<br>`;
         });
         
-        var marker = L.marker(latLng).bindPopup(popupContent);
+        var marker = L.marker(latLng, { icon: redIcon }).bindPopup(popupContent);
         marker.chargingSolutions = station.chargingSolutions;
         allStations.push(marker);
         markers.addLayer(marker);
