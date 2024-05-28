@@ -5,11 +5,11 @@ var markers = L.markerClusterGroup();
 var allStations = [];
 
 Promise.all([
-    fetch('https://eipa.udt.gov.pl/reader/export-data/operator/85ac1231b31b7533ce1e332123706921').then(response => response.json()),
-    fetch('https://eipa.udt.gov.pl/reader/export-data/pool/85ac1231b31b7533ce1e332123706921').then(response => response.json()),
-    fetch('https://eipa.udt.gov.pl/reader/export-data/station/85ac1231b31b7533ce1e332123706921').then(response => response.json()),
-    fetch('https://eipa.udt.gov.pl/reader/export-data/point/85ac1231b31b7533ce1e332123706921').then(response => response.json()),
-    fetch('https://eipa.udt.gov.pl/reader/export-data/dictionary/85ac1231b31b7533ce1e332123706921').then(response => response.json())
+    fetch('https://eipa.udt.gov.pl/reader/export-data/operator/85ac1231b31b7533ce1e332123706921', { mode: 'no-cors'}).then(response => response.json()),
+    fetch('https://eipa.udt.gov.pl/reader/export-data/pool/85ac1231b31b7533ce1e332123706921', { mode: 'no-cors'}).then(response => response.json()),
+    fetch('https://eipa.udt.gov.pl/reader/export-data/station/85ac1231b31b7533ce1e332123706921', { mode: 'no-cors'}).then(response => response.json()),
+    fetch('https://eipa.udt.gov.pl/reader/export-data/point/85ac1231b31b7533ce1e332123706921', { mode: 'no-cors'}).then(response => response.json()),
+    fetch('https://eipa.udt.gov.pl/reader/export-data/dictionary/85ac1231b31b7533ce1e332123706921', { mode: 'no-cors'}).then(response => response.json())
 ]).then(([operatorData, bazyData, stacjeData, punktyData, slownikData]) => {
 
     const chargingModeMap = slownikData.charging_mode.reduce((map, mode) => {
