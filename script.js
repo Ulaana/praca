@@ -9,7 +9,6 @@ var redIcon = L.icon({
                 iconSize: [25, 41],
                 shadowSize: [41, 41],
                 iconAnchor: [12, 41],
-                shadowAnchor: [24, 41],
                 popupAnchor: [1, -34]
 });
 
