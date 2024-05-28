@@ -5,11 +5,11 @@ var markers = L.markerClusterGroup();
 var allStations = [];
 
 Promise.all([
-    fetch('json/operator.json').then(response => response.json()),
-    fetch('json/bazy.json').then(response => response.json()),
-    fetch('json/stacje.json').then(response => response.json()),
-    fetch('json/punkty.json').then(response => response.json()),
-    fetch('json/slownik.json').then(response => response.json())
+    fetch('https://eipa.udt.gov.pl/reader/export-data/operator/85ac1231b31b7533ce1e332123706921').then(response => response.json()),
+    fetch('https://eipa.udt.gov.pl/reader/export-data/pool/85ac1231b31b7533ce1e332123706921').then(response => response.json()),
+    fetch('https://eipa.udt.gov.pl/reader/export-data/station/85ac1231b31b7533ce1e332123706921').then(response => response.json()),
+    fetch('https://eipa.udt.gov.pl/reader/export-data/point/85ac1231b31b7533ce1e332123706921').then(response => response.json()),
+    fetch('https://eipa.udt.gov.pl/reader/export-data/dictionary/85ac1231b31b7533ce1e332123706921').then(response => response.json())
 ]).then(([operatorData, bazyData, stacjeData, punktyData, slownikData]) => {
 
     const chargingModeMap = slownikData.charging_mode.reduce((map, mode) => {
@@ -31,6 +31,7 @@ Promise.all([
         var matchingStacja = stacjeData.data.find(stacja => stacja.id === station.station_id);
         var matchingBaza = bazyData.data.find(baza => baza.id === matchingStacja.pool_id);
         var matchingOperator = operatorData.data.find(operator => operator.id === matchingBaza.operator_id);
+        
         if (matchingBaza.charging) {
             var coords = `${matchingStacja.latitude},${matchingStacja.longitude}`;
             if (!aggregatedStations[coords]) {
@@ -40,6 +41,7 @@ Promise.all([
                     chargingSolutions: []
                 };
             }
+            
             station.charging_solutions.forEach(solution => {
                 var modeName = chargingModeMap[solution.mode] || "Nieznany";
                 aggregatedStations[coords].chargingSolutions.push({
@@ -55,9 +57,11 @@ Promise.all([
         var station = aggregatedStations[coords];
         var latLng = coords.split(',').map(Number);
         var popupContent = `Miasto: ${station.location.city}<br>Operator: ${station.operator}<br>`;
+        
         station.chargingSolutions.forEach(solution => {
             popupContent += `Typ ładowania: ${solution.mode}<br>Moc: ${solution.power} kW<br>`;
         });
+        
         var marker = L.marker(latLng).bindPopup(popupContent);
         marker.chargingSolutions = station.chargingSolutions;
         allStations.push(marker);
@@ -69,6 +73,7 @@ Promise.all([
     chargingModeFilter.addEventListener('change', () => {
         var selectedMode = chargingModeFilter.value;
         markers.clearLayers();
+        
         allStations.forEach(marker => {
             if (selectedMode === 'all' || marker.chargingSolutions.some(solution => solution.modeId == selectedMode)) {
                 markers.addLayer(marker);
@@ -95,6 +100,7 @@ function findNearestStation(e) {
             nearestStation = station;
         }
     });
+    
     if (nearestStation) {
         if (routingControl) {
             map.removeControl(routingControl);
@@ -111,13 +117,6 @@ function findNearestStation(e) {
 }
 
 map.on('click', findNearestStation);
-
- map.on('contextmenu', () => {
-     if (routingControl) {
-         map.removeControl(routingControl);
-         routingControl = null;
-     }
- });
 
 L.Control.geocoder().addTo(map);
 
