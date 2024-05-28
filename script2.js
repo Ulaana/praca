@@ -112,6 +112,13 @@ function findNearestStation(e) {
 
 map.on('click', findNearestStation);
 
+ map.on('contextmenu', () => {
+     if (routingControl) {
+         map.removeControl(routingControl);
+         routingControl = null;
+     }
+ });
+
 L.Control.geocoder().addTo(map);
 
 map.locate({setView: true, maxZoom: 16});
