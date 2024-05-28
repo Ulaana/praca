@@ -100,7 +100,7 @@ var routingControl = null;
 function findNearestStation(e) {
     var userClick = e.latlng;
     var userPoint = turf.point([userClick.lng, userClick.lat]);
-    var station = null;
+    var nearestStation = null;
     var nearestDistance = Infinity;
 
     markers.eachLayer(function(station) {
@@ -108,18 +108,18 @@ function findNearestStation(e) {
         var distance = turf.distance(userPoint, stationPoint);
         if (distance < nearestDistance) {
             nearestDistance = distance;
-            station = station;
+            nearestStation = station;
         }
     });
     
-    if (station) {
+    if (nearestStation) {
         if (routingControl) {
             map.removeControl(routingControl);
         }
         routingControl = L.Routing.control({
             waypoints: [
                 L.latLng(userClick.lat, userClick.lng),
-                station.getLatLng()
+                nearestStation.getLatLng()
             ],
             routeWhileDragging: true,
             language: 'pl'
