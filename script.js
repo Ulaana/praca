@@ -17,6 +17,8 @@ Promise.all([
         return map;
     }, {});
 
+    console.log(chargingModeMap);
+
     const chargingModeFilter = document.getElementById('charging-mode-filter');
     slownikData.charging_mode.forEach(mode => {
         const option = document.createElement('option');
