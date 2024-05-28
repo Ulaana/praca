@@ -76,7 +76,7 @@ Promise.all([
         });
     });
 }).catch(error => {
-    console.error('Error loading JSON data:', error);
+    console.error('Błąd w załadowaniu pliku JSON:', error);
 });
 
 var routingControl = null;
