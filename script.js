@@ -124,6 +124,7 @@ function findNearestStation(e) {
             routeWhileDragging: true,
             language: 'pl'
         }).addTo(map);
+        nearestStation.bindPopup(popupContent);
     }
 }
 
