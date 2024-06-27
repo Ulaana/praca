@@ -115,6 +115,9 @@ function findNearestStation(e) {
         if (routingControl) {
             map.removeControl(routingControl);
         }
+        if (redMarker) {
+            map.removeLayer(redMarker);
+        }
         routingControl = L.Routing.control({
             waypoints: [
                 L.latLng(userClick.lat, userClick.lng),
@@ -123,7 +126,7 @@ function findNearestStation(e) {
             routeWhileDragging: true,
             language: 'pl'
         }).addTo(map);
-        var redMarker = L.marker(nearestStation.getLatLng(), { icon: redIcon }).bindPopup(nearestStation.popupContent).addTo(map);
+        var redMarker = L.marker(nearestStation.getLatLng(), { icon: redIcon }).bindPopup(nearestStation.getPopup().getContent()).addTo(map);
     }
 }
 
