@@ -118,11 +118,12 @@ function findNearestStation(e) {
         routingControl = L.Routing.control({
             waypoints: [
                 L.latLng(userClick.lat, userClick.lng),
-                L.marker(nearestStation.getLatLng(), { icon: redIcon }).bindPopup(nearestStation.popupContent)
+                nearestStation.getLatLng()
             ],
             routeWhileDragging: true,
             language: 'pl'
         }).addTo(map);
+        var redMarker = L.marker(nearestStation.getLatLng(), { icon: redIcon }).bindPopup(nearestStation.popupContent).addTo(map);
     }
 }
 
