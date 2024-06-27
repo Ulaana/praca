@@ -127,7 +127,7 @@ function findNearestStation(e) {
             routeWhileDragging: true,
             language: 'pl'
         }).addTo(map);
-        var redMarker = L.marker(nearestStation.getLatLng(), { icon: redIcon }).bindPopup(nearestStation.getPopup().getContent()).addTo(map);
+        redMarker = L.marker(nearestStation.getLatLng(), { icon: redIcon }).bindPopup(nearestStation.getPopup().getContent()).addTo(map);
     }
 }
 
