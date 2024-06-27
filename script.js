@@ -118,7 +118,7 @@ function findNearestStation(e) {
         routingControl = L.Routing.control({
             waypoints: [
                 L.latLng(userClick.lat, userClick.lng),
-                nearestStation.getLatLng()
+                L.marker(nearestStation.getLatLng(), { icon: redIcon }).bindPopup(nearestStation.popupContent)
             ],
             routeWhileDragging: true,
             language: 'pl'
