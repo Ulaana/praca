@@ -89,6 +89,9 @@ Promise.all([
                 markers.addLayer(marker);
             }
         });
+        if (lastUserClick) {
+            findNearestStation({ latlng: lastUserClick });
+        }
     });
 }).catch(error => {
     console.error('Błąd w załadowaniu pliku JSON:', error);
@@ -96,9 +99,11 @@ Promise.all([
 
 var routingControl = null;
 var redMarker = null;
+var lastUserClick = null;
 
 function findNearestStation(e) {
     var userClick = e.latlng;
+    lastUserClick = userClick;
     var userPoint = turf.point([userClick.lng, userClick.lat]);
     var nearestStation = null;
     var nearestDistance = Infinity;
@@ -166,7 +171,7 @@ legend.onAdd = function(map) {
     
     div.innerHTML += '<h4>Legenda</h4>';
     div.innerHTML += '<i style="background: red; width: 12px; height: 12px; display: inline-block; margin-right: 5px;"></i> Stacja ładowania<br>';
-    div.innerHTML += '<i style="background: blue; width: 12px; height: 12px; display: inline-block; margin-right: 5px;"></i> Najbliższa stacja ładowania<br>';
+    div.innerHTML += '<i style="background: blue; width: 12px; height: 12px; display: inline-block; margin-right: 5px;"></i> Punkt użytkownika<br>';
     return div;
 };
 
