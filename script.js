@@ -95,6 +95,7 @@ Promise.all([
 });
 
 var routingControl = null;
+var redMarker = null;
 
 function findNearestStation(e) {
     var userClick = e.latlng;
