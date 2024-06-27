@@ -156,12 +156,17 @@ function onLocationError(e) {
 
 map.on('locationerror', onLocationError);
 
-var legend = L.control({position: 'bottomright'});
+var legend = L.control({ position: 'bottomright' });
 
 legend.onAdd = function(map) {
     var div = L.DomUtil.create('div', 'info legend');
-    div.innerHTML += '<i style="background: red"></i> Stacja ładowania<br>';
-    div.innerHTML += '<i style="background: blue"></i> Najbliższa stacja ładowania<br>';
+    div.style.backgroundColor = 'white';
+    div.style.padding = '10px';
+    div.style.boxShadow = '0 0 15px rgba(0,0,0,0.2)';
+    
+    div.innerHTML += '<h4>Legenda</h4>';
+    div.innerHTML += '<i style="background: red; width: 12px; height: 12px; display: inline-block; margin-right: 5px;"></i> Stacja ładowania<br>';
+    div.innerHTML += '<i style="background: blue; width: 12px; height: 12px; display: inline-block; margin-right: 5px;"></i> Najbliższa stacja ładowania<br>';
     return div;
 };
 
