@@ -138,7 +138,7 @@ function findNearestStation(e) {
 
 map.on('click', findNearestStation);
 
-L.Control.geocoder().addTo(map);
+L.Control.geocoder({defaultMarkGeocode: false}).addTo(map);
 
 map.locate({setView: true, maxZoom: 16});
 
