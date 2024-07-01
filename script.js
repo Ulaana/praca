@@ -138,7 +138,10 @@ function findNearestStation(e) {
 
 map.on('click', findNearestStation);
 
-L.Control.geocoder({defaultMarkGeocode: false}).addTo(map);
+L.Control.geocoder()).on('markgeocode', function(e) {
+    var latlng = e.geocode.center;
+    map.setView(latlng, map.getZoom());
+    findNearestStation({ latlng: latlng });.addTo(map);
 
 map.locate({setView: true, maxZoom: 16});
 
