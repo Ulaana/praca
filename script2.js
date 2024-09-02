@@ -106,6 +106,8 @@ function findNearestStation(e) {
     lastUserClick = userClick;
     var nearestStation = null;
     var shortestDistance = Infinity;
+    var shortestRoute = null; 
+
     var requests = [];
 
     markers.eachLayer(function(station) {
@@ -113,20 +115,24 @@ function findNearestStation(e) {
         var waypointStation = station.getLatLng();
 
         var routingRequest = new Promise((resolve, reject) => {
-            L.Routing.control({
+            var routingControl = L.Routing.control({
                 waypoints: [waypointUser, waypointStation],
-                createMarker: function() { return null; },  
+                createMarker: function() { return null; }, 
                 routeWhileDragging: false,
                 addWaypoints: false,
                 language: 'pl',
                 fitSelectedRoutes: false,
                 show: false,
-            }).on('routesfound', function(e) {
-                var distance = e.routes[0].summary.totalDistance;  
-                resolve({ station, distance });
+            });
+
+            routingControl.on('routesfound', function(e) {
+                var distance = e.routes[0].summary.totalDistance;
+                resolve({ station, distance, route: e.routes[0] });
             }).on('routingerror', function(e) {
                 reject(e);
-            }).addTo(map);
+            });
+
+            routingControl.spliceWaypoints(0, 2, waypointUser, waypointStation);
         });
 
         requests.push(routingRequest);
@@ -137,6 +143,7 @@ function findNearestStation(e) {
             if (result.distance < shortestDistance) {
                 shortestDistance = result.distance;
                 nearestStation = result.station;
+                shortestRoute = result.route;
             }
         });
 
@@ -153,9 +160,14 @@ function findNearestStation(e) {
                     nearestStation.getLatLng()
                 ],
                 routeWhileDragging: true,
-                language: 'pl'
+                language: 'pl',
+                fitSelectedRoutes: true,
+                show: true,
             }).addTo(map);
+
             redMarker = L.marker(nearestStation.getLatLng(), { icon: redIcon }).bindPopup(nearestStation.getPopup().getContent()).addTo(map);
+            routingControl.setWaypoints([L.latLng(userClick.lat, userClick.lng), nearestStation.getLatLng()]);
+            routingControl.addTo(map).setWaypoints(shortestRoute.waypoints);
         }
     }).catch(error => {
         console.error('Błąd w wyznaczaniu trasy:', error);
@@ -163,6 +175,7 @@ function findNearestStation(e) {
 }
 
 map.on('click', findNearestStation);
+
 
 L.Control.geocoder({defaultMarkGeocode: false}).on('markgeocode', function(e) {
     var latlng = e.geocode.center;
