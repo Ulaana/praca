@@ -101,77 +101,56 @@ var routingControl = null;
 var redMarker = null;
 var lastUserClick = null;
 
-function findNearestStation(e) {
+async function findNearestStation(e) {
     var userClick = e.latlng;
     lastUserClick = userClick;
     var nearestStation = null;
-    var shortestDistance = Infinity;
-    var shortestRoute = null; 
+    var nearestDistance = Infinity;
 
-    var requests = [];
+    const ors = new ORS({ api_key: '5b3ce3597851110001cf62483be64b4a8d2e477083d7ad513d7c112b' }); 
 
-    markers.eachLayer(function(station) {
-        var waypointUser = L.latLng(userClick.lat, userClick.lng);
-        var waypointStation = station.getLatLng();
-
-        var routingRequest = new Promise((resolve, reject) => {
-            var routingControl = L.Routing.control({
-                waypoints: [waypointUser, waypointStation],
-                createMarker: function() { return null; }, 
-                routeWhileDragging: false,
-                addWaypoints: false,
-                language: 'pl',
-                fitSelectedRoutes: false,
-                show: false,
+    for (let marker of allStations) {
+        var stationLatLng = marker.getLatLng();
+        
+        try {
+            let response = await ors.directions({
+                profile: 'driving-car',
+                coordinates: [
+                    [userClick.lng, userClick.lat],
+                    [stationLatLng.lng, stationLatLng.lat]
+                ]
             });
 
-            routingControl.on('routesfound', function(e) {
-                var distance = e.routes[0].summary.totalDistance;
-                resolve({ station, distance, route: e.routes[0] });
-            }).on('routingerror', function(e) {
-                reject(e);
-            });
-
-            routingControl.spliceWaypoints(0, 2, waypointUser, waypointStation);
-        });
-
-        requests.push(routingRequest);
-    });
-
-    Promise.all(requests).then(results => {
-        results.forEach(result => {
-            if (result.distance < shortestDistance) {
-                shortestDistance = result.distance;
-                nearestStation = result.station;
-                shortestRoute = result.route;
+            if (response && response.routes.length > 0) {
+                var distance = response.routes[0].summary.distance / 1000;
+                if (distance < nearestDistance) {
+                    nearestDistance = distance;
+                    nearestStation = marker;
+                }
             }
-        });
-
-        if (nearestStation) {
-            if (routingControl) {
-                map.removeControl(routingControl);
-            }
-            if (redMarker) {
-                map.removeLayer(redMarker);
-            }
-            routingControl = L.Routing.control({
-                waypoints: [
-                    L.latLng(userClick.lat, userClick.lng),
-                    nearestStation.getLatLng()
-                ],
-                routeWhileDragging: true,
-                language: 'pl',
-                fitSelectedRoutes: true,
-                show: true,
-            }).addTo(map);
-
-            redMarker = L.marker(nearestStation.getLatLng(), { icon: redIcon }).bindPopup(nearestStation.getPopup().getContent()).addTo(map);
-            routingControl.setWaypoints([L.latLng(userClick.lat, userClick.lng), nearestStation.getLatLng()]);
-            routingControl.addTo(map).setWaypoints(shortestRoute.waypoints);
+        } catch (error) {
+            console.error('Błąd w wyznaczaniu trasy:', error);
         }
-    }).catch(error => {
-        console.error('Błąd w wyznaczaniu trasy:', error);
-    });
+    }
+
+    if (nearestStation) {
+        if (routingControl) {
+            map.removeControl(routingControl);
+        }
+        if (redMarker) {
+            map.removeLayer(redMarker);
+        }
+        
+        routingControl = L.Routing.control({
+            waypoints: [
+                L.latLng(userClick.lat, userClick.lng),
+                nearestStation.getLatLng()
+            ],
+            routeWhileDragging: true,
+            language: 'pl'
+        }).addTo(map);
+        redMarker = L.marker(nearestStation.getLatLng(), { icon: redIcon }).bindPopup(nearestStation.getPopup().getContent()).addTo(map);
+    }
 }
 
 map.on('click', findNearestStation);
