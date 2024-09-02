@@ -180,3 +180,15 @@ legend.onAdd = function(map) {
 };
 
 legend.addTo(map);
+
+document.getElementById('remove-route').addEventListener('click', () => {
+    if (routingControl) {
+        map.removeControl(routingControl); 
+        routingControl = null;
+    }
+    if (redMarker) {
+        map.removeLayer(redMarker);
+        redMarker = null;
+    }
+    lastUserClick = null;
+});
