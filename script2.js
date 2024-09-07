@@ -109,7 +109,7 @@ function getRouteFromGraphhopper(userLatLng, stationLatLng) {
         .then(data => {
             if (data.paths && data.paths.length > 0) {
                 return {
-                    distance: data.paths[0].distance / 1000,
+                    distance: data.paths[0].distance / 1000, 
                     route: data.paths[0].points 
                 };
             }
@@ -128,7 +128,7 @@ function findNearestStation(e) {
     var nearestStation = null;
     var nearestDistance = Infinity;
 
-    const promises = [];
+    const routePromises = [];
 
     markers.eachLayer(function(station) {
         var stationLatLng = station.getLatLng();
@@ -140,10 +140,10 @@ function findNearestStation(e) {
             }
             return null;
         });
-        promises.push(routePromise);
+        routePromises.push(routePromise);
     });
 
-    Promise.all(promises).then(results => {
+    Promise.all(routePromises).then(results => {
         var nearestResult = results.find(result => result && result.station === nearestStation);
         if (nearestResult) {
             if (routingControl) {
@@ -171,6 +171,7 @@ function findNearestStation(e) {
         }
     });
 }
+
 map.on('click', findNearestStation);
 
 L.Control.geocoder({defaultMarkGeocode: false}).on('markgeocode', function(e) {
