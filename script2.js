@@ -101,6 +101,10 @@ var routingControl = null;
 var redMarker = null;
 var lastUserClick = null;
 
+function delay(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+
 function getRouteFromGraphhopper(userLatLng, stationLatLng) {
     const graphhopperUrl = `https://graphhopper.com/api/1/route?point=${userLatLng.lat},${userLatLng.lng}&point=${stationLatLng.lat},${stationLatLng.lng}&vehicle=car&locale=pl&calc_points=true&key=bcf14366-6797-4cc7-95f4-eb61c340c243`;
 
@@ -130,17 +134,23 @@ function findNearestStation(e) {
 
     const routePromises = [];
 
+    let delayMs = 0;
+
     markers.eachLayer(function(station) {
         var stationLatLng = station.getLatLng();
-        var routePromise = getRouteFromGraphhopper(userClick, stationLatLng).then(result => {
-            if (result && result.distance < nearestDistance) {
-                nearestDistance = result.distance;
-                nearestStation = station;
-                return { station, route: result.route };
-            }
-            return null;
+        var routePromise = delay(delayMs).then(() => {
+            return getRouteFromGraphhopper(userClick, stationLatLng).then(result => {
+                if (result && result.distance < nearestDistance) {
+                    nearestDistance = result.distance;
+                    nearestStation = station;
+                    return { station, route: result.route };
+                }
+                return null;
+            });
         });
+
         routePromises.push(routePromise);
+        delayMs += 1000;
     });
 
     Promise.all(routePromises).then(results => {
