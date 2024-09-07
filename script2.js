@@ -101,60 +101,77 @@ var routingControl = null;
 var redMarker = null;
 var lastUserClick = null;
 
-async function findNearestStation(e) {
+function getRouteFromGraphhopper(userLatLng, stationLatLng) {
+    const graphhopperUrl = `https://graphhopper.com/api/1/route?point=${userLatLng.lat},${userLatLng.lng}&point=${stationLatLng.lat},${stationLatLng.lng}&vehicle=car&locale=pl&calc_points=true&key=bcf14366-6797-4cc7-95f4-eb61c340c243`;
+
+    return fetch(graphhopperUrl)
+        .then(response => response.json())
+        .then(data => {
+            if (data.paths && data.paths.length > 0) {
+                return {
+                    distance: data.paths[0].distance / 1000,
+                    route: data.paths[0].points 
+                };
+            }
+            return null;
+        })
+        .catch(error => {
+            console.error('Błąd w zapytaniu do GraphHopper:', error);
+            return null;
+        });
+}
+
+function findNearestStation(e) {
     var userClick = e.latlng;
     lastUserClick = userClick;
+
     var nearestStation = null;
     var nearestDistance = Infinity;
 
-    const ors = new ORS({ api_key: '5b3ce3597851110001cf62483be64b4a8d2e477083d7ad513d7c112b' }); 
+    const promises = [];
 
-    for (let marker of allStations) {
-        var stationLatLng = marker.getLatLng();
-        
-        try {
-            let response = await ors.directions({
-                profile: 'driving-car',
-                coordinates: [
-                    [userClick.lng, userClick.lat],
-                    [stationLatLng.lng, stationLatLng.lat]
-                ]
-            });
-
-            if (response && response.routes.length > 0) {
-                var distance = response.routes[0].summary.distance / 1000;
-                if (distance < nearestDistance) {
-                    nearestDistance = distance;
-                    nearestStation = marker;
-                }
+    markers.eachLayer(function(station) {
+        var stationLatLng = station.getLatLng();
+        var routePromise = getRouteFromGraphhopper(userClick, stationLatLng).then(result => {
+            if (result && result.distance < nearestDistance) {
+                nearestDistance = result.distance;
+                nearestStation = station;
+                return { station, route: result.route };
             }
-        } catch (error) {
-            console.error('Błąd w wyznaczaniu trasy:', error);
-        }
-    }
+            return null;
+        });
+        promises.push(routePromise);
+    });
 
-    if (nearestStation) {
-        if (routingControl) {
-            map.removeControl(routingControl);
+    Promise.all(promises).then(results => {
+        var nearestResult = results.find(result => result && result.station === nearestStation);
+        if (nearestResult) {
+            if (routingControl) {
+                map.removeControl(routingControl);
+            }
+            if (redMarker) {
+                map.removeLayer(redMarker);
+            }
+
+            routingControl = L.Routing.control({
+                waypoints: [
+                    L.latLng(userClick.lat, userClick.lng),
+                    nearestStation.getLatLng()
+                ],
+                routeWhileDragging: true,
+                language: 'pl',
+                lineOptions: {
+                    styles: [{ color: 'blue', opacity: 1, weight: 4 }]
+                }
+            }).addTo(map);
+
+            redMarker = L.marker(nearestStation.getLatLng(), { icon: redIcon })
+                .bindPopup(nearestStation.getPopup().getContent())
+                .addTo(map);
         }
-        if (redMarker) {
-            map.removeLayer(redMarker);
-        }
-        
-        routingControl = L.Routing.control({
-            waypoints: [
-                L.latLng(userClick.lat, userClick.lng),
-                nearestStation.getLatLng()
-            ],
-            routeWhileDragging: true,
-            language: 'pl'
-        }).addTo(map);
-        redMarker = L.marker(nearestStation.getLatLng(), { icon: redIcon }).bindPopup(nearestStation.getPopup().getContent()).addTo(map);
-    }
+    });
 }
-
 map.on('click', findNearestStation);
-
 
 L.Control.geocoder({defaultMarkGeocode: false}).on('markgeocode', function(e) {
     var latlng = e.geocode.center;
