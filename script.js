@@ -131,6 +131,9 @@ function findNearestStation(e) {
             ],
             routeWhileDragging: true,
             language: 'pl'
+        }).on('waypointschanged', function(e) {
+            var newPoint = e.waypoints[0].latLng;  
+            findNearestStation({ latlng: newPoint });  
         }).addTo(map);
         redMarker = L.marker(nearestStation.getLatLng(), { icon: redIcon }).bindPopup(nearestStation.getPopup().getContent()).addTo(map);
     }
