@@ -165,22 +165,6 @@ function onLocationError(e) {
 
 map.on('locationerror', onLocationError);
 
-var legend = L.control({ position: 'bottomright' });
-
-legend.onAdd = function(map) {
-    var div = L.DomUtil.create('div', 'info legend');
-    div.style.backgroundColor = 'white';
-    div.style.padding = '10px';
-    div.style.boxShadow = '0 0 15px rgba(0,0,0,0.2)';
-    
-    div.innerHTML += '<h4>Legenda</h4>';
-    div.innerHTML += '<i style="background: red; width: 12px; height: 12px; display: inline-block; margin-right: 5px;"></i> Stacja ładowania<br>';
-    div.innerHTML += '<i style="background: blue; width: 12px; height: 12px; display: inline-block; margin-right: 5px;"></i> Punkt użytkownika<br>';
-    return div;
-};
-
-legend.addTo(map);
-
 document.getElementById('remove-route').addEventListener('click', () => {
     if (routingControl) {
         map.removeControl(routingControl); 
