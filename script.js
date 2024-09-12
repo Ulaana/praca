@@ -11,6 +11,23 @@ var redIcon = L.icon({
                 iconAnchor: [12, 41],
                 popupAnchor: [1, -34]
 });
+var filterControl = L.control({ position: 'topleft' });
+
+filterControl.onAdd = function(map) {
+    var div = L.DomUtil.create('div', 'filter-container');
+
+    div.innerHTML = `
+        <label for="charging-mode-filter">Wybierz typ ładowania:</label>
+        <select id="charging-mode-filter">
+            <option value="all">Wszystkie</option>
+        </select>`;
+
+    L.DomEvent.disableClickPropagation(div);
+
+    return div;
+};
+
+filterControl.addTo(map);
 
 Promise.all([
     fetch('json/operator.json').then(response => response.json()),
@@ -168,21 +185,39 @@ function onLocationError(e) {
 
 map.on('locationerror', onLocationError);
 
+
 var legend = L.control({ position: 'bottomright' });
 
 legend.onAdd = function(map) {
-    var div = L.DomUtil.create('div', 'info legend');
-    div.style.backgroundColor = 'white';
-    div.style.padding = '10px';
-    div.style.boxShadow = '0 0 15px rgba(0,0,0,0.2)';
+    var div = L.DomUtil.create('div', 'legend');
     
-    div.innerHTML += '<h4>Legenda</h4>';
-    div.innerHTML += '<i style="background: red; width: 12px; height: 12px; display: inline-block; margin-right: 5px;"></i> Stacja ładowania<br>';
-    div.innerHTML += '<i style="background: blue; width: 12px; height: 12px; display: inline-block; margin-right: 5px;"></i> Punkt użytkownika<br>';
+    div.innerHTML = `
+        <h3>Legenda</h3>
+        <div id="red"></div> Stacja ładowania<br>
+        <div id="blue"></div> Punkt użytkownika<br>`;
+
+    L.DomEvent.disableClickPropagation(div);
+    
     return div;
 };
 
 legend.addTo(map);
+
+var clearRouteControl = L.control({ position: 'topright' });
+
+clearRouteControl.onAdd = function(map) {
+    var div = L.DomUtil.create('div', 'clear-route-container');
+
+    div.innerHTML = `
+        <button id="remove-route">Wyczyść trasę</button>
+    `;
+
+    L.DomEvent.disableClickPropagation(div);
+
+    return div;
+};
+
+clearRouteControl.addTo(map);
 
 document.getElementById('remove-route').addEventListener('click', () => {
     if (routingControl) {
