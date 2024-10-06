@@ -1,16 +1,33 @@
-var map = L.map('map').setView([51.2465, 22.5684], 13);
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {maxZoom: 19,}).addTo(map);
+var map = L.map('map').fitBounds([[49.0, 14.0], [55.0, 24.0]]); 
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors' }).addTo(map);
 
 var markers = L.markerClusterGroup();
 var allStations = [];
 var redIcon = L.icon({
-                iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png',
-                shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.3.1/images/marker-shadow.png',
-                iconSize: [25, 41],
-                shadowSize: [41, 41],
-                iconAnchor: [12, 41],
-                popupAnchor: [1, -34]
+    iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png',
+    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.3.1/images/marker-shadow.png',
+    iconSize: [25, 41],
+    shadowSize: [41, 41],
+    iconAnchor: [12, 41],
+    popupAnchor: [1, -34]
 });
+var filterControl = L.control({ position: 'topleft' });
+
+filterControl.onAdd = function (map) {
+    var div = L.DomUtil.create('div', 'filter-container');
+
+    div.innerHTML = `
+        <label for="charging-mode-filter">Wybierz typ ładowania:</label>
+        <select id="charging-mode-filter">
+            <option value="all">Wszystkie</option>
+        </select>`;
+
+    L.DomEvent.disableClickPropagation(div);
+
+    return div;
+};
+
+filterControl.addTo(map);
 
 Promise.all([
     fetch('json/operator.json').then(response => response.json()),
@@ -24,8 +41,6 @@ Promise.all([
         map[mode.id] = mode.name;
         return map;
     }, {});
-
-    console.log(chargingModeMap);
 
     const chargingModeFilter = document.getElementById('charging-mode-filter');
     slownikData.charging_mode.forEach(mode => {
@@ -41,7 +56,7 @@ Promise.all([
         var matchingStacja = stacjeData.data.find(stacja => stacja.id === station.station_id);
         var matchingBaza = bazyData.data.find(baza => baza.id === matchingStacja.pool_id);
         var matchingOperator = operatorData.data.find(operator => operator.id === matchingBaza.operator_id);
-        
+
         if (matchingBaza.charging) {
             var coords = `${matchingStacja.latitude},${matchingStacja.longitude}`;
             if (!aggregatedStations[coords]) {
@@ -51,7 +66,7 @@ Promise.all([
                     chargingSolutions: []
                 };
             }
-            
+
             station.charging_solutions.forEach(solution => {
                 var modeName = chargingModeMap[solution.mode] || "Nieznany";
                 aggregatedStations[coords].chargingSolutions.push({
@@ -67,11 +82,11 @@ Promise.all([
         var station = aggregatedStations[coords];
         var latLng = coords.split(',').map(Number);
         var popupContent = `Miasto: ${station.location.city}<br>Operator: ${station.operator}<br>`;
-        
+
         station.chargingSolutions.forEach(solution => {
             popupContent += `Typ ładowania: ${solution.mode}<br>Moc: ${solution.power} kW<br>`;
         });
-        
+
         var marker = L.marker(latLng, { icon: redIcon }).bindPopup(popupContent);
         marker.chargingSolutions = station.chargingSolutions;
         allStations.push(marker);
@@ -83,14 +98,14 @@ Promise.all([
     chargingModeFilter.addEventListener('change', () => {
         var selectedMode = chargingModeFilter.value;
         markers.clearLayers();
-        
+
         allStations.forEach(marker => {
             if (selectedMode === 'all' || marker.chargingSolutions.some(solution => solution.modeId == selectedMode)) {
                 markers.addLayer(marker);
             }
         });
         if (lastUserClick) {
-            findNearestStation({ latlng: lastUserClick });
+            findThreeNearestStations({ latlng: lastUserClick });
         }
     });
 }).catch(error => {
@@ -101,96 +116,94 @@ var routingControl = null;
 var redMarker = null;
 var lastUserClick = null;
 
-function delay(ms) {
-    return new Promise(resolve => setTimeout(resolve, ms));
-}
-
-function getRouteFromGraphhopper(userLatLng, stationLatLng) {
-    const graphhopperUrl = `https://graphhopper.com/api/1/route?point=${userLatLng.lat},${userLatLng.lng}&point=${stationLatLng.lat},${stationLatLng.lng}&vehicle=car&locale=pl&calc_points=true&key=bcf14366-6797-4cc7-95f4-eb61c340c243`;
-
-    return fetch(graphhopperUrl)
-        .then(response => response.json())
-        .then(data => {
-            if (data.paths && data.paths.length > 0) {
-                return {
-                    distance: data.paths[0].distance / 1000, 
-                    route: data.paths[0].points 
-                };
-            }
-            return null;
-        })
-        .catch(error => {
-            console.error('Błąd w zapytaniu do GraphHopper:', error);
-            return null;
-        });
-}
-
-function findNearestStation(e) {
+function findThreeNearestStations(e) {
     var userClick = e.latlng;
     lastUserClick = userClick;
+    var userPoint = turf.point([userClick.lng, userClick.lat]);
 
-    var nearestStation = null;
-    var nearestDistance = Infinity;
+    // Array to store the three nearest stations
+    var nearestStations = [];
 
-    const routePromises = [];
+    markers.eachLayer(function (station) {
+        var stationPoint = turf.point([station.getLatLng().lng, station.getLatLng().lat]);
+        var distance = turf.distance(userPoint, stationPoint);
 
-    let delayMs = 0;
+        // Add each station with its distance
+        nearestStations.push({ station: station, distance: distance });
+    });
 
-    markers.eachLayer(function(station) {
-        var stationLatLng = station.getLatLng();
-        var routePromise = delay(delayMs).then(() => {
-            return getRouteFromGraphhopper(userClick, stationLatLng).then(result => {
-                if (result && result.distance < nearestDistance) {
-                    nearestDistance = result.distance;
-                    nearestStation = station;
-                    return { station, route: result.route };
-                }
-                return null;
-            });
+    // Sort by distance and take the three nearest stations
+    nearestStations.sort((a, b) => a.distance - b.distance);
+    nearestStations = nearestStations.slice(0, 3);
+
+    // Now calculate the actual route distance for each of the 3 nearest stations
+    var routePromises = nearestStations.map(({ station }) => {
+        return new Promise((resolve, reject) => {
+            var tempRoutingControl = L.Routing.control({
+                waypoints: [L.latLng(userClick.lat, userClick.lng), station.getLatLng()],
+                createMarker: () => null,  // Don't create any markers for now
+                routeWhileDragging: true,
+                language: 'pl',
+                addWaypoints: false, // Don't display the route just yet
+            }).on('routesfound', function (e) {
+                var route = e.routes[0];
+                resolve({ station, routeLength: route.summary.totalDistance });
+                map.removeControl(tempRoutingControl); // Remove the temporary routing control
+            }).on('routingerror', function () {
+                reject('Routing error');
+            }).addTo(map);
+
+            // We don't add the control to the map, just calculate the route
         });
-
-        routePromises.push(routePromise);
-        delayMs += 1000;
     });
 
     Promise.all(routePromises).then(results => {
-        var nearestResult = results.find(result => result && result.station === nearestStation);
-        if (nearestResult) {
-            if (routingControl) {
-                map.removeControl(routingControl);
-            }
-            if (redMarker) {
-                map.removeLayer(redMarker);
-            }
+        // Sort by the actual route length and take the shortest one
+        results.sort((a, b) => a.routeLength - b.routeLength);
+        var shortest = results[0];
 
-            routingControl = L.Routing.control({
-                waypoints: [
-                    L.latLng(userClick.lat, userClick.lng),
-                    nearestStation.getLatLng()
-                ],
-                routeWhileDragging: true,
-                language: 'pl',
-                lineOptions: {
-                    styles: [{ color: 'blue', opacity: 1, weight: 4 }]
-                }
-            }).addTo(map);
-
-            redMarker = L.marker(nearestStation.getLatLng(), { icon: redIcon })
-                .bindPopup(nearestStation.getPopup().getContent())
-                .addTo(map);
+        // Display the shortest route on the map
+        if (routingControl) {
+            map.removeControl(routingControl);
         }
+        if (redMarker) {
+            map.removeLayer(redMarker);
+        }
+
+        // Now add the shortest route to the map
+        routingControl = L.Routing.control({
+            waypoints: [
+                L.latLng(userClick.lat, userClick.lng),
+                shortest.station.getLatLng()
+            ],
+            routeWhileDragging: true,
+            language: 'pl',
+            addWaypoints: false
+        }).on('waypointschanged', function (e) {
+            var newPoint = e.waypoints[0].latLng;
+            findThreeNearestStations({ latlng: newPoint });
+        }).addTo(map);
+
+        // Add the marker for the nearest station
+        redMarker = L.marker(shortest.station.getLatLng(), { icon: redIcon })
+            .bindPopup(shortest.station.getPopup().getContent())
+            .addTo(map);
+    }).catch(error => {
+        console.error(error);
     });
 }
 
-map.on('click', findNearestStation);
+// Replace the click event handler with the new function
+map.on('click', findThreeNearestStations);
 
-L.Control.geocoder({defaultMarkGeocode: false}).on('markgeocode', function(e) {
+
+L.Control.geocoder({ defaultMarkGeocode: false }).on('markgeocode', function (e) {
     var latlng = e.geocode.center;
     map.setView(latlng, map.getZoom());
-    findNearestStation({ latlng: latlng }); 
+    findThreeNearestStations({ latlng: latlng });
 }).addTo(map);
 
-map.locate({setView: true, maxZoom: 16});
+map.locate({ setView: true, maxZoom: 16 });
 
 function onLocationFound(e) {
     var radius = e.accuracy / 2;
@@ -211,25 +224,43 @@ function onLocationError(e) {
 
 map.on('locationerror', onLocationError);
 
-var legend = L.control({ position: 'bottomright' });
 
-legend.onAdd = function(map) {
-    var div = L.DomUtil.create('div', 'info legend');
-    div.style.backgroundColor = 'white';
-    div.style.padding = '10px';
-    div.style.boxShadow = '0 0 15px rgba(0,0,0,0.2)';
-    
-    div.innerHTML += '<h4>Legenda</h4>';
-    div.innerHTML += '<i style="background: red; width: 12px; height: 12px; display: inline-block; margin-right: 5px;"></i> Stacja ładowania<br>';
-    div.innerHTML += '<i style="background: blue; width: 12px; height: 12px; display: inline-block; margin-right: 5px;"></i> Punkt użytkownika<br>';
+var legend = L.control({ position: 'bottomleft' });
+
+legend.onAdd = function (map) {
+    var div = L.DomUtil.create('div', 'legend');
+
+    div.innerHTML = `
+        <h3>Legenda</h3>
+        <div id="red"></div> Stacja ładowania<br>
+        <div id="blue"></div> Punkt użytkownika<br>`;
+
+    L.DomEvent.disableClickPropagation(div);
+
     return div;
 };
 
 legend.addTo(map);
 
+var clearRouteControl = L.control({ position: 'topright' });
+
+clearRouteControl.onAdd = function (map) {
+    var div = L.DomUtil.create('div', 'clear-route-container');
+
+    div.innerHTML = `
+        <button id="remove-route">Wyczyść trasę</button>
+    `;
+
+    L.DomEvent.disableClickPropagation(div);
+
+    return div;
+};
+
+clearRouteControl.addTo(map);
+
 document.getElementById('remove-route').addEventListener('click', () => {
     if (routingControl) {
-        map.removeControl(routingControl); 
+        map.removeControl(routingControl);
         routingControl = null;
     }
     if (redMarker) {
@@ -238,3 +269,17 @@ document.getElementById('remove-route').addEventListener('click', () => {
     }
     lastUserClick = null;
 });
+
+document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+    anchor.addEventListener('click', function (e) {
+        e.preventDefault();
+        document.querySelector(this.getAttribute('href')).scrollIntoView({
+            behavior: 'smooth'
+        });
+    });
+});
+
+function toggleMenu() {
+    const menu = document.querySelector('.menu');
+    menu.classList.toggle('show');
+}

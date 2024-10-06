@@ -1,43 +1,314 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: "SUSE", sans-serif;
+    line-height: 1.6;
+    margin: 0;
+    padding: 0;
+}
+
+header {
+    background-color: #333;
+    padding: 10px 0;
+    position: sticky;
+    top: 0;
+    width: 100%;
+    z-index: 1000;
+}
+
+.hamburger {
+    display: none;
+    flex-direction: column;
+    justify-content: space-between;
+    width: 30px;
+    height: 20px;
+    cursor: pointer;
+}
+
+.hamburger div {
+    background-color: white;
+    height: 4px;
+    width: 100%;
+    border-radius: 2px;
+}
+
+.menu {
+    display: flex;
+    justify-content: center;
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.menu li {
+    margin: 0 20px;
+}
+
+.menu a {
+    color: white;
+    text-decoration: none;
+    font-weight: bold;
+    font-size: 18px;
+}
+
+.menu a:hover {
+    color: #f44336;
+    transition: color 0.3s;
+}
+
+section {
+    padding: 30px 10px;
+    text-align: justify;
+}
+
+#home {
+    background: linear-gradient(to bottom, #ffffff, #cccccc);
+}
+
+#about {
+    background: linear-gradient(to bottom, #cccccc, #999999);
+}
+
+#map-section {
+    background: linear-gradient(to bottom, #999999, #666666);
+    text-align: center;
+}
+
 #map {
     height: 800px;
-    width: 100%;
-}
-.filter-container { 
-    background-color: white;
-    padding: 10px;
-    border-radius: 5px;
+    width: 90%;
+    margin: 0 auto;
+    text-align: left;
+    font-family: "SUSE", sans-serif;
+    z-index: 0;
+    border-radius: 8px;
     box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
 }
+
+/* Stopka */
+footer {
+    background-color: #333;
+    color: white;
+    padding: 20px 0;
+    text-align: center;
+    font-size: 16px;
+}
+
+.filter-container,
 .legend {
     background-color: white;
     padding: 10px;
-    padding-top: 3px;
     border-radius: 5px;
     box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
 }
-#red {
-    background: red; 
-    width: 12px; 
-    height: 12px; 
-    display: inline-block; 
-    margin-right: 5px;
+
+.filter-container {
+    display: flex;
+    flex-direction: column;
 }
+
+.legend {
+    padding-top: 3px;
+}
+
+#red,
 #blue {
-    background: blue; 
-    width: 12px; 
-    height: 12px; 
-    display: inline-block; 
+    width: 12px;
+    height: 12px;
+    display: inline-block;
     margin-right: 5px;
 }
+
+#red {
+    background: red;
+}
+
+#blue {
+    background: blue;
+}
+
 #remove-route {
     background-color: #f44336;
     color: white;
     border: none;
-    padding: 8px 16px;
+    padding: 10px 20px;
     cursor: pointer;
     border-radius: 5px;
     box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+    font-size: 16px;
+    font-family: "SUSE", sans-serif;
 }
+
 #remove-route:hover {
     background-color: #d32f2f;
+    transition: background-color 0.3s;
+}
+
+.leaflet-routing-container {
+    width: 320px;
+}
+
+@media (max-width: 600px) {
+    .menu {
+        flex-direction: column;
+        display: none;
+        width: 100%;
+        background-color: #333;
+    }
+
+    .menu.show {
+        display: flex;
+    }
+
+    .menu li {
+        margin: 10px 0;
+        text-align: left;
+    }
+
+    .hamburger {
+        display: flex;
+    }
+
+    .menu a {
+        font-size: 18px;
+    }
+
+    section {
+        padding: 30px 5px;
+        font-size: 12px;
+    }
+
+    #map {
+        height: 600px;
+        font-size: 10px;
+    }
+
+    footer {
+        font-size: 10px;
+        padding: 15px 0;
+    }
+
+    #remove-route {
+        padding: 8px 16px;
+        font-size: 10px;
+    }
+
+    .filter-container,
+    .legend {
+        padding: 8px;
+        font-size: 10px;
+    }
+
+    p {
+        font-size: 10px;
+    }
+}
+
+@media (min-width: 601px) and (max-width: 1024px) {
+    .menu li {
+        margin: 0 15px;
+    }
+
+    .menu a {
+        font-size: 18px;
+    }
+
+    #map {
+        height: 500px;
+        font-size: 12px;
+    }
+
+    #map-section {
+        padding: 30px 5px;
+    }
+
+    section {
+        padding: 40px 30px;
+        font-size: 12px;
+    }
+
+    footer {
+        font-size: 12px;
+    }
+
+    #remove-route {
+        padding: 10px 18px;
+        font-size: 12px;
+    }
+
+    p {
+        font-size: 12px;
+    }
+}
+
+@media (min-width: 1025px) {
+    .menu li {
+        margin: 0 30px;
+    }
+
+    .menu a {
+        font-size: 18px;
+    }
+
+    section {
+        padding: 60px 30px;
+    }
+
+    #map {
+        height: 650px;
+    }
+
+    footer {
+        font-size: 14px;
+    }
+
+    #remove-route {
+        padding: 10px 20px;
+        font-size: 16px;
+    }
+}
+
+@media (min-width: 2560px) {
+    body {
+        font-size: 20px;
+    }
+
+    .menu a {
+        font-size: 27px;
+    }
+
+    section {
+        padding: 80px 100px;
+    }
+
+    #map {
+        height: 1000px;
+    }
+
+    footer {
+        font-size: 18px;
+        padding: 30px 0;
+    }
+
+    #remove-route {
+        padding: 14px 28px;
+        font-size: 18px;
+    }
+
+    .filter-container,
+    .legend {
+        padding: 15px;
+        box-shadow: 0 0 30px rgba(0, 0, 0, 0.3);
+        font-size: 18px;
+    }
+
+    #red,
+    #blue {
+        width: 16px;
+        height: 16px;
+    }
 }
