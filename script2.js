@@ -1,4 +1,4 @@
-var map = L.map('map').fitBounds([[49.0, 14.0], [55.0, 24.0]]); 
+var map = L.map('map').setView([52.0, 19.0], 6);
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors' }).addTo(map);
 
 var markers = L.markerClusterGroup();
